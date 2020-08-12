@@ -1,7 +1,8 @@
 import React from 'react';
 import './Board.css';
 import Square from '../Square/Square';
-import {initialBoardState, light, dark} from '../../utils/constants';
+import {initialBoardState, light, dark, columns, rows} from '../../utils/constants';
+import {removeDuplicates} from '../../utils/utils';
 
 class Board extends React.Component {
     constructor() {
@@ -20,24 +21,25 @@ class Board extends React.Component {
     }
 
     renderSquares() {
-        const { boardState, redPaths, blackPaths } = this.state
+        const { boardState } = this.state
         let columnsToRender = [];
         let divs = [];
         let squareColor = light;
-        let freeSquare;
+        let freeSquare = false;
         for(let i = 0; i < initialBoardState.length; i++) {
             for(let j = 0; j < initialBoardState.length; j++) {
                 if ((i % 2 === 0 && j % 2 === 1) || (i % 2 === 1 && j % 2 === 0)) squareColor = dark;
                 else squareColor = light;
                 if (boardState[j][i] === 'h') squareColor = 'canMove'
-                freeSquare = this.state.boardState[j][i] === '-' && squareColor === dark;
+                freeSquare = (boardState[j][i] === 'h' || boardState[j][i] === '-') && (squareColor === dark || squareColor === 'canMove');
                 columnsToRender.push(
                     <Square className={squareColor} piece={boardState[j][i]} key={7 * i + j} isfree={freeSquare} 
-                        x={j} y={i} movePiece={this.updateBoardState} highlightPossibleSquares={this.highlightSquare} red={redPaths} black={blackPaths} />
+                        x={j} y={i} movePiece={this.updateBoardState} highlightPossibleSquares={this.highlightSquare} />
                 )
             }
+            divs.push(columnsToRender)
+            columnsToRender = []
         }
-        for(let i = 0; i < 8; i++) divs.push(columnsToRender.slice(i * 8, i * 8 + 8))
         return divs;
     }
 
@@ -52,39 +54,48 @@ class Board extends React.Component {
             newBoardState[newPieceX][newPieceY] = 'b';
             newBoardState[selectedBlackPiece[0]][selectedBlackPiece[1]] = '-'
         }
-        this.setState({boardState: newBoardState})
-        let paths = this.showPossiblePaths()
-        this.setState({redPaths: paths[0], blackPaths: paths[1]})
+        this.cleanBoardHighlight(newBoardState);
+        this.setState({boardState: newBoardState, selectedRedPiece: [], selectedBlackPiece: []})
+        this.showPossiblePaths();
+    }
+
+    cleanBoardHighlight(currentBoard) {
+        for(let i = 0; i < rows; i++) {
+            for(let j = 0; j < columns; j++) {
+                if(currentBoard[j][i] === 'h') currentBoard[j][i] = '-'  
+            }
+        }
     }
 
     showPossiblePaths() {
         const {boardState} = this.state
         let possibleRedPaths = []
         let possibleBlackPaths = []
-        for (let i = 0; i < 8; i++) {
-            for (let j = 0; j < 8; j++) {
+        for (let i = 0; i < columns; i++) {
+            for (let j = 0; j < rows; j++) {
                 if(boardState[j][i] === 'r')
                     possibleRedPaths.push([j+1, i+1], [j+1, i-1])
                 if(boardState[j][i] === 'b')
                     possibleBlackPaths.push([j-1, i+1], [j-1, i-1])
             }
         }
+        possibleBlackPaths = removeDuplicates(possibleBlackPaths)
+        possibleRedPaths = removeDuplicates(possibleRedPaths)
         for (let i = 0; i < possibleRedPaths.length; i++) {
-            if(boardState[possibleRedPaths[i][0]][possibleRedPaths[i][1]] === 'r' || 
-                    possibleRedPaths[i][0] > 7 || possibleRedPaths[i][0] < 0 || 
-                    possibleRedPaths[i][1] < 0 || possibleRedPaths[i][1] > 7) {
+            if (possibleRedPaths[i][0] > 7 || possibleRedPaths[i][0] < 0 || 
+                possibleRedPaths[i][1] < 0 || possibleRedPaths[i][1] > 7) {
                 possibleRedPaths.splice(i, 1)
                 i--;
             }
         }
         for (let i = 0; i < possibleBlackPaths.length; i++) {
-            if(boardState[possibleBlackPaths[i][0]][possibleBlackPaths[i][1]] === 'b' || 
-                    possibleBlackPaths[i][0] > 7 || possibleBlackPaths[i][0] < 0 || 
-                    possibleBlackPaths[i][1] < 0 || possibleBlackPaths[i][1] > 7) {
+            if (possibleBlackPaths[i][0] > 7 || possibleBlackPaths[i][0] < 0 || 
+                possibleBlackPaths[i][1] < 0 || possibleBlackPaths[i][1] > 7) {
                 possibleBlackPaths.splice(i, 1)
                 i--;
             }
         }
+        this.setState({redPaths: possibleRedPaths, blackPaths: possibleBlackPaths})
         return [possibleRedPaths, possibleBlackPaths]
     }
 

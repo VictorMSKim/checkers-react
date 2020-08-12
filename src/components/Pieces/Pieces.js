@@ -12,9 +12,8 @@ class Pieces extends React.Component {
     }
 
     handleClick() {
-        const { checkValidSquare, piece, pieceX, pieceY } = this.props;
-        const { selected } = this.state;
-        checkValidSquare(pieceX, pieceY, piece, selected)
+        const { checkValidSquare, pieceX, pieceY } = this.props;
+        checkValidSquare(pieceX, pieceY)
     }
 
     render() {
