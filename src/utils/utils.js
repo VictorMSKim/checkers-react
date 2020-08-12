@@ -1,9 +1,17 @@
 export const removeDuplicates = (arr) => {
     let tmp = [];
-    return arr.filter((v) => {
-        if (tmp.indexOf(v.toString()) < 0) {
-            tmp.push(v.toString());
-            return v;
+    return arr.filter((item) => {
+        if (tmp.indexOf(item.toString()) < 0) {
+            tmp.push(item.toString());
+            return item;
         }
     });
+}
+
+export const isPresentInArray = (arrayToSearch, elementToFind) => {
+    let elemString = elementToFind.toString();
+    for(let i = 0; i < arrayToSearch.length; i++) {
+        if(arrayToSearch[i].toString() === elemString) return true;
+    }
+    return false;
 }

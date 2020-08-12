@@ -20,3 +20,5 @@ export const dark = 'dark';
 export const red = 'red';
 
 export const black = 'black';
+
+export const highlight = 'highlight';
