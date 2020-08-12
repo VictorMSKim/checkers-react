@@ -11,24 +11,34 @@ class Square extends React.Component {
             x: this.props.x,
             y: this.props.y,
         }
-        this.showCoordinates = this.showCoordinates.bind(this)
+        this.movePiece = this.movePiece.bind(this)
+        this.checkValidSquare = this.checkValidSquare.bind(this)
+        this.renderPiece = this.renderPiece.bind(this)
     }
 
-    isPiecePresent(piece) {
+    renderPiece(piece) {
+        const {x, y} = this.state;
         let pieceColor;
-        if(piece === '-') return null;
+        if(piece === '-' || piece === 'h') return null;
         pieceColor = piece === 'r' ? red : black;
-        return (<Pieces className={pieceColor} pieceX={this.state.x} pieceY={this.state.y} />)
+        return (<Pieces className={pieceColor} pieceX={x} pieceY={y} piece={piece} checkValidSquare={this.checkValidSquare}/>)
     }
 
-    showCoordinates() {
-        if(this.state.isfree) console.log(this.state.x, this.state.y)
+    movePiece() {
+        const {isfree, x, y} = this.state
+        const {movePiece} = this.props
+        if(isfree) movePiece(x, y)
+    }
+
+    checkValidSquare(pieceX, pieceY, pieceType, selected) {
+        const {highlightPossibleSquares} = this.props
+        highlightPossibleSquares(pieceX, pieceY, pieceType, selected)
     }
 
     render() {
         return (
-            <div className={`square ${this.props.className}`} value={this.props.value} onClick={this.showCoordinates} >
-                {this.isPiecePresent(this.props.piece)}
+            <div className={`square ${this.props.className}`} value={this.props.value} onClick={this.movePiece} >
+                {this.renderPiece(this.props.piece)}
             </div>
         );
     }
