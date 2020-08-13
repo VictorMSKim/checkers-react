@@ -14,9 +14,9 @@ class Square extends React.Component {
     renderPiece() {
         const {x, y, piece} = this.props;
         let pieceColor;
-        if(piece === '-' || piece === 'h') return null;
-        else if(piece === 'r') return (<Pieces className={red} pieceX={x} pieceY={y} piece={piece} checkValidSquare={this.checkValidSquare}/>)
-        else if(piece === 'b') return (<Pieces className={black} pieceX={x} pieceY={y} piece={piece} checkValidSquare={this.checkValidSquare}/>)
+        if(piece === '-' || piece === 'h') return <div></div>;
+        pieceColor = piece === 'r'? red : black; 
+        return (<Pieces className={pieceColor} pieceX={x} pieceY={y} piece={piece} checkValidSquare={this.checkValidSquare}/>)
     }
 
     movePiece() {
