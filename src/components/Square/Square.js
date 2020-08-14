@@ -27,8 +27,8 @@ class Square extends React.Component {
     }
 
     checkValidSquare(pieceX, pieceY) {
-        const {highlightPossibleSquares, piece} = this.props
-        highlightPossibleSquares(pieceX, pieceY, piece)
+        const {pieceClickHandler, piece} = this.props
+        pieceClickHandler(pieceX, pieceY, piece)
     }
 
     render() {

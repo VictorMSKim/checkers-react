@@ -1,8 +1,8 @@
 import React from 'react';
 import './Board.css';
 import Square from '../Square/Square';
-import {initialBoardState, light, dark, highlight, columns, rows, black} from '../../utils/constants';
-import {removeDuplicates, isPresentInArray} from '../../utils/utils';
+import {initialBoardState, light, dark, highlight, columns, rows} from '../../utils/constants';
+import {removeDuplicates, isPresentInArray, checkIfInteger} from '../../utils/utils';
 
 class Board extends React.Component {
     constructor() {
@@ -16,9 +16,10 @@ class Board extends React.Component {
             selectedBlackPiece: [],
             isolatedRedPath: [],
             isolatedBlackPath: [],
+            turn: 'black',
         }
         this.updateBoardState = this.updateBoardState.bind(this)
-        this.highlightSquare = this.highlightSquare.bind(this)
+        this.pieceClickHandler = this.pieceClickHandler.bind(this)
         this.showPossiblePaths = this.showPossiblePaths.bind(this)
         this.renderSquares = this.renderSquares.bind(this)
     }
@@ -34,20 +35,13 @@ class Board extends React.Component {
 
     identifyEnemyPiece(pieceType, movesArray, board) {
         const enemy = [];
-        if(pieceType === 'r') {
-            for(let i = 0; i < movesArray.length; i++) {
-                if(board[movesArray[i][0]][movesArray[i][1]] === 'b')
-                    enemy.push(movesArray[i])
-            }
-            this.setState({enemyBlackPieces: enemy})
+        const enemyPiece = pieceType === 'r' ? 'b' : 'r';
+        for(let i = 0; i < movesArray.length; i++) {
+            if(board[movesArray[i][0]][movesArray[i][1]] === enemyPiece)
+                enemy.push(movesArray[i])
         }
-        if(pieceType === 'b') {
-            for(let i = 0; i < movesArray.length; i++) {
-                if(board[movesArray[i][0]][movesArray[i][1]] === 'r')
-                    enemy.push(movesArray[i])
-            }
-            this.setState({enemyRedPieces: enemy})
-        }
+        // this.setState({enemyBlackPieces: enemy})
+        // this.setState({enemyRedPieces: enemy})
         return enemy;
     }
 
@@ -55,28 +49,15 @@ class Board extends React.Component {
         const enemy = this.identifyEnemyPiece(pieceType, movesArray, board);
         const jump = []
         if(enemy.length) {
-            if (pieceType === 'r'){
-                for(let i = 0; i < enemy.length; i++) {
-                    const enemyX = enemy[i][0];
-                    const enemyY = enemy[i][1];
-                    if(!this.isOutsideOfBoard([enemyX + 1, enemyY + 1]) && enemyY + 1 !== pieceY && (board[enemyX + 1][enemyY + 1] === '-')) {
-                        jump.push([enemyX + 1, enemyY + 1])
-                    }
-                    if(!this.isOutsideOfBoard([enemyX + 1, enemyY - 1]) && enemyY - 1 !== pieceY && (board[enemyX + 1][enemyY - 1] === '-')) {
-                        jump.push([enemyX + 1, enemyY - 1])
-                    }
+            for(let i = 0; i < enemy.length; i++) {
+                const enemyX = enemy[i][0];
+                const enemyY = enemy[i][1];
+                const freeX = pieceType === 'r' ? enemyX + 1 : enemyX - 1;
+                if(!this.isOutsideOfBoard([freeX, enemyY + 1]) && enemyY + 1 !== pieceY && (board[freeX][enemyY + 1] === '-')) {
+                    jump.push([freeX, enemyY + 1])
                 }
-            }
-            if (pieceType === 'b') {
-                for(let i = 0; i < enemy.length; i++) {
-                    const enemyX = enemy[i][0];
-                    const enemyY = enemy[i][1];
-                    if(!this.isOutsideOfBoard([enemyX - 1, enemyY + 1]) && enemyY + 1 !== pieceY && (board[enemyX - 1][enemyY + 1] === '-')) {
-                        jump.push([enemyX - 1, enemyY + 1])
-                    }
-                    if(!this.isOutsideOfBoard([enemyX - 1, enemyY - 1]) && enemyY - 1 !== pieceY && (board[enemyX - 1][enemyY - 1] === '-')) {
-                        jump.push([enemyX - 1, enemyY - 1])
-                    }
+                if(!this.isOutsideOfBoard([freeX, enemyY - 1]) && enemyY - 1 !== pieceY && (board[freeX][enemyY - 1] === '-')) {
+                    jump.push([freeX, enemyY - 1])
                 }
             }
         }
@@ -95,8 +76,7 @@ class Board extends React.Component {
         if(selectedPiece.length && this.isMoveLegal([newPieceX, newPieceY], isolatedMoves)) {
             const pieceType = board[selectedPiece[0]][selectedPiece[1]] === 'r' ? 'r' : 'b';
             const enemyPos = this.enemyPosToRemove(selectedPiece[0], selectedPiece[1], newPieceX, newPieceY, isolatedMoves)
-            if(enemy.length && enemyPos[0] % 1 === 0 && enemyPos[1] % 1 === 0) {
-                // console.log(enemyPos[0] % 1 === 0)
+            if(enemy.length && checkIfInteger(enemyPos[0]) && checkIfInteger(enemyPos[1])) {
                 board[enemyPos[0]][enemyPos[1]] = '-'
             }
             board[newPieceX][newPieceY] = pieceType;
@@ -169,41 +149,35 @@ class Board extends React.Component {
         }
     }
 
-    realHighlightFunction(squarePosition, board) {
+    highlightBoard(squarePosition, board) {
         for(let i = 0; i < squarePosition.length; i++) {
             if(board[squarePosition[i][0]][squarePosition[i][1]] === 'h') board[squarePosition[i][0]][squarePosition[i][1]] = '-'
             else if(board[squarePosition[i][0]][squarePosition[i][1]] === '-') board[squarePosition[i][0]][squarePosition[i][1]] = 'h'  
         }
     }
 
-    highlightSquare(pieceX, pieceY, pieceType) {
-        const {enemy, boardState} = this.state
+    calculatePieceMoves(path, board, selectedPiece, pieceType) {
+        const possiblePaths = this.showPossiblePaths(board);
+        path = pieceType === 'r' ? possiblePaths[0] : possiblePaths[1];
+        path = this.isolatePieceMoves(selectedPiece, path, board)
+        this.highlightBoard(path, board)
+        this.setState({boardState: board, 
+            selectedRedPiece: pieceType === 'r' ? selectedPiece : [], 
+            selectedBlackPiece: pieceType === 'r' ? [] : selectedPiece, 
+            isolatedRedPath: pieceType === 'r' ? path : [], 
+            isolatedBlackPath: pieceType === 'r' ? [] : path
+        })
+    }
+
+    pieceClickHandler(pieceX, pieceY, pieceType) {
+        const {boardState} = this.state
         let redPath = [];
         let blackPath = [];
+        const path = pieceType === 'r' ? redPath : blackPath;
         let highlightBoard = boardState
         let selectedPiece = [pieceX, pieceY]
         this.cleanBoardHighlight(highlightBoard)
-        if(pieceType === 'r') {
-            redPath = this.showPossiblePaths(boardState)[0]
-            redPath = this.isolatePieceMoves(selectedPiece, redPath, boardState)
-            console.log(redPath)
-            this.realHighlightFunction(redPath, highlightBoard)
-            this.setState({boardState: highlightBoard, 
-                selectedRedPiece: [pieceX, pieceY], 
-                selectedBlackPiece: [], 
-                isolatedRedPath: redPath, isolatedBlackPath: []})
-        }
-        else if(pieceType === 'b') {
-            blackPath = this.showPossiblePaths(boardState)[1]
-            blackPath = this.isolatePieceMoves(selectedPiece, blackPath, boardState)
-            console.log(blackPath)
-            this.realHighlightFunction(blackPath, highlightBoard)
-            this.setState({boardState: highlightBoard, 
-                selectedBlackPiece: [pieceX, pieceY], 
-                selectedRedPiece: [], 
-                isolatedBlackPath: blackPath, isolatedRedPath: []})
-        }
-
+        this.calculatePieceMoves(path, highlightBoard, selectedPiece, pieceType)
     }
 
     endGame() {
@@ -225,7 +199,7 @@ class Board extends React.Component {
                 freeSquare = (boardState[j][i] === 'h' || boardState[j][i] === '-') && (squareColor === dark || squareColor === highlight);
                 columnsToRender.push(
                     <Square className={squareColor} piece={boardState[j][i]} key={7 * i + j} isfree={freeSquare} 
-                        x={j} y={i} movePiece={this.updateBoardState} highlightPossibleSquares={this.highlightSquare} />
+                        x={j} y={i} movePiece={this.updateBoardState} pieceClickHandler={this.pieceClickHandler} />
                 )
             }
             divs.push(columnsToRender)
