@@ -1,7 +1,7 @@
 import React from 'react';
 import './Board.css';
 import Square from '../Square/Square';
-import {initialBoardState, light, dark, highlight, columns, rows} from '../../utils/constants';
+import {initialBoardState, light, dark, highlight, columns, rows, black} from '../../utils/constants';
 import {removeDuplicates, isPresentInArray} from '../../utils/utils';
 
 class Board extends React.Component {
@@ -74,7 +74,7 @@ class Board extends React.Component {
                     if(!this.isOutsideOfBoard([enemyX - 1, enemyY + 1]) && enemyY + 1 !== pieceY && (board[enemyX - 1][enemyY + 1] === '-')) {
                         jump.push([enemyX - 1, enemyY + 1])
                     }
-                    if(!this.isOutsideOfBoard([enemyX - 1, enemyY - 1]) && board.length && enemyY - 1 !== pieceY && (board[enemyX - 1][enemyY - 1] === '-')) {
+                    if(!this.isOutsideOfBoard([enemyX - 1, enemyY - 1]) && enemyY - 1 !== pieceY && (board[enemyX - 1][enemyY - 1] === '-')) {
                         jump.push([enemyX - 1, enemyY - 1])
                     }
                 }
@@ -84,10 +84,21 @@ class Board extends React.Component {
         return jump
     }
 
+    enemyPosToRemove(oldPosX, oldPosY, newPosX, newPosY) {
+        const deltaX = (oldPosX - newPosX) / 2;
+        const deltaY = (oldPosY - newPosY) / 2;
+        const enemyPos = [newPosX + deltaX, newPosY + deltaY]
+        return enemyPos
+    }
+
     movePiece(selectedPiece, newPieceX, newPieceY, board, enemy, isolatedMoves) {
         if(selectedPiece.length && this.isMoveLegal([newPieceX, newPieceY], isolatedMoves)) {
             const pieceType = board[selectedPiece[0]][selectedPiece[1]] === 'r' ? 'r' : 'b';
-            if(enemy.length && newPieceX === isolatedMoves[0][0] && newPieceY === isolatedMoves[0][1]) board[enemy[0][0]][enemy[0][1]] = '-'
+            const enemyPos = this.enemyPosToRemove(selectedPiece[0], selectedPiece[1], newPieceX, newPieceY, isolatedMoves)
+            if(enemy.length && enemyPos[0] % 1 === 0 && enemyPos[1] % 1 === 0) {
+                // console.log(enemyPos[0] % 1 === 0)
+                board[enemyPos[0]][enemyPos[1]] = '-'
+            }
             board[newPieceX][newPieceY] = pieceType;
             board[selectedPiece[0]][selectedPiece[1]] = '-'
         }
@@ -109,9 +120,6 @@ class Board extends React.Component {
             if(isPresentInArray(piecePaths, [pieceX, selectedPiece[1] - 1])) 
                 moves.push([pieceX, selectedPiece[1] - 1])
             jump = this.canJumpOver(pieceType, moves, board, selectedPiece[1])
-            // this.setState({isolatedPath: moves})
-            // console.log(jump)
-            // console.log(moves)
         }
         if(jump.length) return jump
         return moves;
@@ -144,19 +152,6 @@ class Board extends React.Component {
         return positionsArray[0] > 7 || positionsArray[0] < 0 || positionsArray[1] < 0 || positionsArray[1] > 7
     }
 
-    removeAlreadyOccupied(positionsArray, board) {
-        if(positionsArray.length) {
-            const pieceType = board[positionsArray[0][0]][positionsArray[0][1]]
-            for(let i = 0; i < positionsArray.length; i++) {
-                if(board[positionsArray[i][0]][positionsArray[i][1]] === pieceType) {
-                    positionsArray.splice(i, 1);
-                    i--
-                }
-            }
-        }
-
-    }
-
     removeInvalidMovements(movementsArray) {
         for (let i = 0; i < movementsArray.length; i++) {
             if (this.isOutsideOfBoard(movementsArray[i])) {
@@ -174,8 +169,15 @@ class Board extends React.Component {
         }
     }
 
+    realHighlightFunction(squarePosition, board) {
+        for(let i = 0; i < squarePosition.length; i++) {
+            if(board[squarePosition[i][0]][squarePosition[i][1]] === 'h') board[squarePosition[i][0]][squarePosition[i][1]] = '-'
+            else if(board[squarePosition[i][0]][squarePosition[i][1]] === '-') board[squarePosition[i][0]][squarePosition[i][1]] = 'h'  
+        }
+    }
+
     highlightSquare(pieceX, pieceY, pieceType) {
-        const {redPaths, blackPaths, boardState, selectedRedPiece, selectedBlackPiece} = this.state
+        const {enemy, boardState} = this.state
         let redPath = [];
         let blackPath = [];
         let highlightBoard = boardState
@@ -185,21 +187,21 @@ class Board extends React.Component {
             redPath = this.showPossiblePaths(boardState)[0]
             redPath = this.isolatePieceMoves(selectedPiece, redPath, boardState)
             console.log(redPath)
-            for(let i = 0; i < redPath.length; i++) {
-                    if(highlightBoard[redPath[i][0]][redPath[i][1]] === 'h') highlightBoard[redPath[i][0]][redPath[i][1]] = '-'
-                    else if(highlightBoard[redPath[i][0]][redPath[i][1]] === '-') highlightBoard[redPath[i][0]][redPath[i][1]] = 'h'  
-            }
-            this.setState({boardState: highlightBoard, selectedRedPiece: [pieceX, pieceY], selectedBlackPiece: [], isolatedRedPath: redPath, isolatedBlackPath: []})
+            this.realHighlightFunction(redPath, highlightBoard)
+            this.setState({boardState: highlightBoard, 
+                selectedRedPiece: [pieceX, pieceY], 
+                selectedBlackPiece: [], 
+                isolatedRedPath: redPath, isolatedBlackPath: []})
         }
         else if(pieceType === 'b') {
             blackPath = this.showPossiblePaths(boardState)[1]
             blackPath = this.isolatePieceMoves(selectedPiece, blackPath, boardState)
             console.log(blackPath)
-            for(let i = 0; i < blackPath.length; i++) {
-                if(highlightBoard[blackPath[i][0]][blackPath[i][1]] === 'h') highlightBoard[blackPath[i][0]][blackPath[i][1]] = '-'
-                else if(highlightBoard[blackPath[i][0]][blackPath[i][1]] === '-') highlightBoard[blackPath[i][0]][blackPath[i][1]] = 'h'  
-        }
-            this.setState({boardState: highlightBoard, selectedBlackPiece: [pieceX, pieceY], selectedRedPiece: [], isolatedBlackPath: blackPath, isolatedRedPath: []})
+            this.realHighlightFunction(blackPath, highlightBoard)
+            this.setState({boardState: highlightBoard, 
+                selectedBlackPiece: [pieceX, pieceY], 
+                selectedRedPiece: [], 
+                isolatedBlackPath: blackPath, isolatedRedPath: []})
         }
 
     }
@@ -233,10 +235,11 @@ class Board extends React.Component {
     }
 
     render() {
-        const { redPaths, blackPaths } = this.state;
+        const { redPaths } = this.state;
         return (
             <div className="board">
-                {this.endGame() ? <div><p>{redPaths.length === 0 ? "BLACK WINS":"RED WINS"}</p></div> : this.renderSquares().map((elem, index) => <div key={index}>{elem}</div>)}
+                {this.endGame() ? <div><p>{redPaths.length === 0 ? "BLACK WINS":"RED WINS"}</p></div> : 
+                    this.renderSquares().map((elem, index) => <div key={index}>{elem}</div>)}
             </div>
         );
     }
