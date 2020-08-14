@@ -16,6 +16,4 @@ export const isPresentInArray = (arrayToSearch, elementToFind) => {
     return false;
 }
 
-export const checkIfInteger = (number) => {
-    return number % 1 === 0;
-}
+export const checkIfInteger = (number) => number % 1 === 0;

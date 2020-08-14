@@ -16,12 +16,13 @@ class Board extends React.Component {
             selectedBlackPiece: [],
             isolatedRedPath: [],
             isolatedBlackPath: [],
-            turn: 'black',
+            turn: 'b',
         }
         this.updateBoardState = this.updateBoardState.bind(this)
         this.pieceClickHandler = this.pieceClickHandler.bind(this)
         this.showPossiblePaths = this.showPossiblePaths.bind(this)
         this.renderSquares = this.renderSquares.bind(this)
+        this.reloadGame = this.reloadGame.bind(this)
     }
 
     updateBoardState(newPieceX, newPieceY) {
@@ -78,10 +79,19 @@ class Board extends React.Component {
             const enemyPos = this.enemyPosToRemove(selectedPiece[0], selectedPiece[1], newPieceX, newPieceY, isolatedMoves)
             if(enemy.length && checkIfInteger(enemyPos[0]) && checkIfInteger(enemyPos[1])) {
                 board[enemyPos[0]][enemyPos[1]] = '-'
+                // this.switchTurn();
             }
             board[newPieceX][newPieceY] = pieceType;
             board[selectedPiece[0]][selectedPiece[1]] = '-'
+            this.switchTurn();
         }
+    }
+
+    switchTurn() {
+        const {turn} = this.state
+        this.setState({
+            turn: turn === 'b' ? 'r' : 'b'
+        })
     }
 
     isMoveLegal(move, allowedMovesArray) {
@@ -170,14 +180,16 @@ class Board extends React.Component {
     }
 
     pieceClickHandler(pieceX, pieceY, pieceType) {
-        const {boardState} = this.state
+        const {boardState, turn} = this.state
         let redPath = [];
         let blackPath = [];
         const path = pieceType === 'r' ? redPath : blackPath;
         let highlightBoard = boardState
         let selectedPiece = [pieceX, pieceY]
         this.cleanBoardHighlight(highlightBoard)
-        this.calculatePieceMoves(path, highlightBoard, selectedPiece, pieceType)
+        if(pieceType === turn) {
+            this.calculatePieceMoves(path, highlightBoard, selectedPiece, pieceType)
+        }
     }
 
     endGame() {
@@ -206,6 +218,20 @@ class Board extends React.Component {
             columnsToRender = []
         }
         return divs;
+    }
+
+    reloadGame() {
+        this.setState({
+            boardState: initialBoardState,
+            redPaths: [[3, 0], [3, 2], [3, 4], [3, 6]],
+            blackPaths: [[4, 1], [4, 3], [4, 5], [4, 7]],
+            enemy: [],
+            selectedRedPiece: [],
+            selectedBlackPiece: [],
+            isolatedRedPath: [],
+            isolatedBlackPath: [],
+            turn: 'black',
+        })
     }
 
     render() {

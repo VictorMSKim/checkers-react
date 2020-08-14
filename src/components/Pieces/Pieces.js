@@ -5,8 +5,7 @@ class Pieces extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            isKing: false,
-            selected: true
+            isKing: false
         }
         this.handleClick = this.handleClick.bind(this);
     }
