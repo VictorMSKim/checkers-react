@@ -2,7 +2,7 @@ import React from 'react';
 import './Board.css';
 import Square from '../Square/Square';
 import {initialBoardState, light, dark, highlight, columns, rows} from '../../utils/constants';
-import {removeDuplicates, isPresentInArray, checkIfInteger, calculateDelta} from '../../utils/utils';
+import {removeDuplicates, removeEntry, isPresentInArray, checkIfInteger, calculateDelta} from '../../utils/utils';
 
 class Board extends React.Component {
     constructor() {
@@ -17,6 +17,7 @@ class Board extends React.Component {
             isolatedRedPath: [],
             isolatedBlackPath: [],
             turn: 'b',
+            kingPieces: [],
         }
         this.updateBoardState = this.updateBoardState.bind(this)
         this.pieceClickHandler = this.pieceClickHandler.bind(this)
@@ -25,12 +26,19 @@ class Board extends React.Component {
     }
 
     updateBoardState(newPieceX, newPieceY) {
-        const { boardState, selectedRedPiece, selectedBlackPiece, enemy, isolatedRedPath, isolatedBlackPath, turn } = this.state
+        const { boardState, selectedRedPiece, selectedBlackPiece, enemy, isolatedRedPath, isolatedBlackPath, turn, kingPieces } = this.state
         let newBoardState = boardState
         this.cleanBoardHighlight(newBoardState);
         this.movePiece(turn === 'r' ? selectedRedPiece : selectedBlackPiece, newPieceX, newPieceY, 
-                        newBoardState, enemy, turn === 'r' ? isolatedRedPath : isolatedBlackPath);
+                        newBoardState, enemy, turn === 'r' ? isolatedRedPath : isolatedBlackPath, kingPieces);
         this.setState({boardState: newBoardState, selectedRedPiece: [], selectedBlackPiece: []})
+    }
+
+    switchTurn() {
+        const {turn} = this.state
+        this.setState({
+            turn: turn === 'b' ? 'r' : 'b'
+        })
     }
 
     identifyEnemyPiece(pieceType, movesArray, board) {
@@ -69,28 +77,54 @@ class Board extends React.Component {
         return enemyPos
     }
 
-    turnPieceIntoKing(selectedPiece) {
-        
+    turnPieceIntoKing(pieceType, selectedPiece, kingPieces) {
+        const kingPiecesArray = kingPieces
+        if ((pieceType === 'r' && selectedPiece[0] === 7) || (pieceType === 'b' && selectedPiece[0] === 0)) {
+            kingPiecesArray.push(selectedPiece)
+            this.setState({
+                kingPieces: kingPiecesArray
+            })
+        }
     }
 
-    movePiece(selectedPiece, newPieceX, newPieceY, board, enemy, isolatedMoves) {
-        if(selectedPiece.length && this.isMoveLegal([newPieceX, newPieceY], isolatedMoves)) {
+    isPieceKing(selectedPiece, kingPiecesArray) {
+        return isPresentInArray(kingPiecesArray, selectedPiece)
+    }
+
+    updatePieceKingPosition(selectedPiece, newPosX, newPosY, kingPieces) {
+        const tempKingPieces = removeEntry(kingPieces, selectedPiece);
+        tempKingPieces.push([newPosX, newPosY])
+        this.setState({
+            kingPieces: tempKingPieces
+        })
+    }
+
+    removeKingEnemyPiece(enemyPos, kingPiecesCopy) {
+        if(this.isPieceKing(enemyPos, kingPiecesCopy)) {
+            kingPiecesCopy = removeEntry(kingPiecesCopy, enemyPos)
+            this.setState({
+                kingPieces: kingPiecesCopy
+            })
+        }
+        return kingPiecesCopy
+    }
+
+    movePiece(selectedPiece, newPieceX, newPieceY, board, enemy, isolatedMoves, kingPieces) {
+        let kingPiecesCopy = kingPieces
+        const newPos = [newPieceX, newPieceY]
+        if(selectedPiece.length && this.isMoveLegal(newPos, isolatedMoves)) {
             const pieceType = board[selectedPiece[0]][selectedPiece[1]] === 'r' ? 'r' : 'b';
             const enemyPos = this.enemyPosToRemove(selectedPiece[0], selectedPiece[1], newPieceX, newPieceY, isolatedMoves)
             if(enemy.length && checkIfInteger(enemyPos[0]) && checkIfInteger(enemyPos[1])) {
                 board[enemyPos[0]][enemyPos[1]] = '-'
+                kingPiecesCopy = this.removeKingEnemyPiece(enemyPos, kingPiecesCopy)
             }
             board[newPieceX][newPieceY] = pieceType;
             board[selectedPiece[0]][selectedPiece[1]] = '-'
+            if(this.isPieceKing(selectedPiece, kingPiecesCopy)) this.updatePieceKingPosition(selectedPiece, newPieceX, newPieceY, kingPiecesCopy)
+            this.turnPieceIntoKing(pieceType, newPos, kingPiecesCopy);
             this.switchTurn();
         }
-    }
-
-    switchTurn() {
-        const {turn} = this.state
-        this.setState({
-            turn: turn === 'b' ? 'r' : 'b'
-        })
     }
 
     isMoveLegal(move, allowedMovesArray) {
@@ -140,17 +174,21 @@ class Board extends React.Component {
         return [possibleRedPaths, possibleBlackPaths]
     }
 
+    insertMoves(paths, isKing, pieceType, posX, posY) {
+        const front = pieceType === 'r' ? posX + 1 : posX - 1
+        const back = pieceType === 'r' ? posX - 1 : posX + 1
+        paths.push([front, posY + 1], [front, posY - 1])
+        if(isKing) {
+            paths.push([back, posY + 1], [back, posY - 1])
+        }
+    }
+
     findAllMoves(board, possibleRedPaths, possibleBlackPaths, isKing) {
         for (let i = 0; i < columns; i++) {
             for (let j = 0; j < rows; j++) {
-                if(board[j][i] === 'r') {
-                    possibleRedPaths.push([j + 1, i + 1], [j + 1, i - 1])
-                    if(isKing) possibleRedPaths.push([j - 1, i + 1], [j - 1, i - 1])
-                }
-                if(board[j][i] === 'b') {
-                    possibleBlackPaths.push([j - 1, i + 1], [j - 1, i - 1])
-                    if(isKing) possibleBlackPaths.push([j + 1, i + 1], [j + 1, i - 1])
-                }
+                const pieceType = board[j][i]
+                if(pieceType === 'r') this.insertMoves(possibleRedPaths, isKing, pieceType, j, i)
+                if(pieceType === 'b') this.insertMoves(possibleBlackPaths, isKing, pieceType, j, i)
             }
         }
     }
@@ -214,7 +252,7 @@ class Board extends React.Component {
     }
 
     renderSquares() {
-        const { boardState } = this.state
+        const { boardState, kingPieces } = this.state
         const divs = [];
         let columnsToRender = [];
         let squareColor = light;
@@ -228,8 +266,7 @@ class Board extends React.Component {
                 columnsToRender.push(
                     <Square 
                         className={squareColor} piece={boardState[j][i]} key={7 * i + j} isfree={freeSquare} 
-                        x={j} y={i} movePiece={this.updateBoardState} pieceClickHandler={this.pieceClickHandler} 
-                        isKing={this.turnPieceIntoKing(j, boardState[j][i])} 
+                        x={j} y={i} movePiece={this.updateBoardState} pieceClickHandler={this.pieceClickHandler} isKing={this.isPieceKing([j,i], kingPieces)}
                     />
                 )
             }
@@ -242,19 +279,26 @@ class Board extends React.Component {
     render() {
         const { redPaths, turn } = this.state;
         return (
-            <div className="board">
-                <div><p>TURN {turn === 'r' ? 'RED' : 'BLACK'}</p></div>
-                {this.endGame() ? 
-                    (<div>
-                        <p>
-                            {redPaths.length === 0 ? "BLACK WINS":"RED WINS"}
-                        </p>
-                    </div>) : 
-                    this.renderSquares().map((elem, index) => 
-                        <div key={index}>
-                            {elem}
-                        </div>)
-                }
+            <div className="outerDiv">
+                <h1>Qulture Challenge - Checkers</h1>
+                <div>
+                    {this.endGame() ? 
+                        (<div>
+                            <p>{redPaths.length === 0 ? "BLACK WINS":"RED WINS"}</p>
+                        </div>) : 
+                        <div>
+                            <p className={`turnText ${turn === 'r' ? 'redTurnText' : null}`}>TURN: {turn === 'r' ? 'RED PLAYER 2' : 'BLACK PLAYER 1'}</p>
+                        </div>
+                    }
+                    <div className="board">
+                        {
+                            this.renderSquares().map((elem, index) => 
+                                <div key={index}>
+                                    {elem}
+                                </div>)
+                        }
+                    </div>
+                </div>
             </div>
         );
     }

@@ -16,6 +16,8 @@ export const isPresentInArray = (arrayToSearch, elementToFind) => {
     return false;
 }
 
+export const removeEntry = (arr, elem) => arr.filter(item => item.toString() !== elem.toString())
+
 export const checkIfInteger = (number) => number % 1 === 0;
 
 export const calculateDelta = (pos1x, pos1y, pos2x, pos2y) => [pos1x - pos2x, pos1y - pos2y];

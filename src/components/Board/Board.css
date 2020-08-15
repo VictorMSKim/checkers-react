@@ -1,6 +1,20 @@
-.board {
+.outerDiv {
     height: 100vh;
     display: flex;
+    flex-direction: column;
     justify-content: center;
-    align-items: center;
+}
+
+.board {
+    display: flex;
+    justify-content: center;
+}
+
+.redTurnText {
+    color: red;
+}
+
+.turnText {
+    font-weight: 600;
+    font-size: larger;
 }
