@@ -12,12 +12,16 @@ class Pieces extends React.Component {
 
     handleClick() {
         const { checkValidSquare, pieceX, pieceY } = this.props;
-        checkValidSquare(pieceX, pieceY)
+        const { isKing } = this.state;
+        checkValidSquare(pieceX, pieceY, isKing)
     }
 
     render() {
+        const { isKing } = this.state
         return (
-            <div className={`piece ${this.props.className}`} onClick={this.handleClick} />
+            <div className={`piece ${this.props.className}`} onClick={this.handleClick}>
+                {isKing ? <div><p className="king">King</p></div> : null}
+            </div>
         );
     }
 }

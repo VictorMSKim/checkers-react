@@ -12,11 +12,11 @@ class Square extends React.Component {
     }
 
     renderPiece() {
-        const {x, y, piece} = this.props;
+        const {x, y, piece, isKing} = this.props;
         let pieceColor;
         if(piece === '-' || piece === 'h') return <div></div>;
         pieceColor = piece === 'r'? red : black; 
-        return (<Pieces className={pieceColor} pieceX={x} pieceY={y} piece={piece} checkValidSquare={this.checkValidSquare}/>)
+        return (<Pieces className={pieceColor} pieceX={x} pieceY={y} piece={piece} checkValidSquare={this.checkValidSquare} isKing={isKing}/>)
     }
 
     movePiece() {
@@ -26,9 +26,9 @@ class Square extends React.Component {
         }
     }
 
-    checkValidSquare(pieceX, pieceY) {
+    checkValidSquare(pieceX, pieceY, isKing) {
         const {pieceClickHandler, piece} = this.props
-        pieceClickHandler(pieceX, pieceY, piece)
+        pieceClickHandler(pieceX, pieceY, piece, isKing)
     }
 
     render() {

@@ -6,12 +6,6 @@ export const blackPiece = 'b';
 
 export const highlightSquare = 'h';
 
-export const redKingPiece = 'q';
-
-export const blackKingPiece = 'k';
-
-// export const 
-
 export const columns = 8;
 
 export const initialBoardState = [
