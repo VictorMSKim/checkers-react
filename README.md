@@ -1,8 +1,38 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
+# Qulture Rocks challenge - Checkers
 
-In the project directory, you can run:
+It was built for a technical challenge for Qulture Rocks internship position
+
+It's a game of checkers
+
+Make sure you have npm installed.
+
+## To run
+
+First you should clone the repository with 
+
+```
+git clone https://github.com/VictorMSKim/qulture_challenge.git
+```
+
+Then, go to the project directory with:
+
+```
+cd qulture_challenge
+```
+
+At the root directory, run:
+
+```
+npm install
+```
+
+After it finishes, run:
+
+```
+npm start
+```
 
 ### `yarn start`
 

@@ -148,12 +148,9 @@ class GameBoard extends React.Component {
             pieceType = board[selectedPiece[0]][selectedPiece[1]] === 'r' ? 'r' : 'b';
             pieceX = pieceType === 'r' ? selectedPiece[0] + 1 : selectedPiece[0] - 1;
             this.includeInArray(piecePaths, pieceX, selectedPiece[1], moves);
-            if(pieceType === 'r' && isKing) {
-                pieceXifKing = selectedPiece[0] - 1;
-                this.includeInArray(piecePaths, pieceXifKing, selectedPiece[1], moves);
-            }
-            if(pieceType === 'b' && isKing) {
-                pieceXifKing = selectedPiece[0] + 1;
+            if(isKing) {
+                if(pieceType === 'r') pieceXifKing = selectedPiece[0] - 1;
+                if(pieceType === 'b') pieceXifKing = selectedPiece[0] + 1;
                 this.includeInArray(piecePaths, pieceXifKing, selectedPiece[1], moves);
             }
             jump = this.canJumpOver(pieceType, moves, board, selectedPiece[1], selectedPiece[0]);
@@ -177,9 +174,11 @@ class GameBoard extends React.Component {
     insertMoves(paths, isKing, pieceType, posX, posY) {
         const front = pieceType === 'r' ? posX + 1 : posX - 1
         const back = pieceType === 'r' ? posX - 1 : posX + 1
-        paths.push([front, posY + 1], [front, posY - 1])
+        const left = posY - 1;
+        const right = posY + 1;
+        paths.push([front, right], [front, left])
         if(isKing) {
-            paths.push([back, posY + 1], [back, posY - 1])
+            paths.push([back, right], [back, left])
         }
     }
 
@@ -208,22 +207,29 @@ class GameBoard extends React.Component {
 
     cleanBoardHighlight(highlightedBoard) {
         for(let i = 0; i < rows; i++)
-            for(let j = 0; j < columns; j++)
+            for(let j = 0; j < columns; j++) {
                 if(highlightedBoard[j][i] === 'h') highlightedBoard[j][i] = '-'  
+                if(highlightedBoard[j][i] === 'bh') highlightedBoard[j][i] = 'b'  
+                if(highlightedBoard[j][i] === 'rh') highlightedBoard[j][i] = 'r'
+            }
     }
 
-    highlightBoard(squarePosition, board) {
+    highlightBoard(squarePosition, board, selectedPiece) {
         for(let i = 0; i < squarePosition.length; i++) {
-            if(board[squarePosition[i][0]][squarePosition[i][1]] === 'h') board[squarePosition[i][0]][squarePosition[i][1]] = '-'
-            else if(board[squarePosition[i][0]][squarePosition[i][1]] === '-') board[squarePosition[i][0]][squarePosition[i][1]] = 'h'  
+            if(board[squarePosition[i][0]][squarePosition[i][1]] === 'h' ) board[squarePosition[i][0]][squarePosition[i][1]] = '-'
+            else if(board[squarePosition[i][0]][squarePosition[i][1]] === '-') board[squarePosition[i][0]][squarePosition[i][1]] = 'h'
         }
+        if(board[selectedPiece[0]][selectedPiece[1]] === 'bh' ) board[selectedPiece[0]][selectedPiece[1]] = 'b'
+        else if(board[selectedPiece[0]][selectedPiece[1]] === 'b') board[selectedPiece[0]][selectedPiece[1]] = 'bh'            
+        if(board[selectedPiece[0]][selectedPiece[1]] === 'rh' ) board[selectedPiece[0]][selectedPiece[1]] = 'r'
+        else if(board[selectedPiece[0]][selectedPiece[1]] === 'r') board[selectedPiece[0]][selectedPiece[1]] = 'rh'        
     }
 
     calculatePieceMoves(path, board, selectedPiece, pieceType, isKing) {
         const possiblePaths = this.showPossiblePaths(board, isKing);
         path = pieceType === 'r' ? possiblePaths[0] : possiblePaths[1];
         path = this.isolatePieceMoves(selectedPiece, path, board, isKing)
-        this.highlightBoard(path, board)
+        this.highlightBoard(path, board, selectedPiece)
         this.setState({
             boardState: board, 
             selectedRedPiece: pieceType === 'r' ? selectedPiece : [], 
@@ -261,7 +267,7 @@ class GameBoard extends React.Component {
             for(let j = 0; j < initialBoardState.length; j++) {
                 if ((i % 2 === 0 && j % 2 === 1) || (i % 2 === 1 && j % 2 === 0)) squareColor = dark;
                 else squareColor = light;
-                if (boardState[j][i] === 'h') squareColor = highlight
+                if (boardState[j][i] === 'h' || boardState[j][i] === 'bh' || boardState[j][i] === 'rh') squareColor = highlight
                 freeSquare = (boardState[j][i] === 'h' || boardState[j][i] === '-') && (squareColor === dark || squareColor === highlight);
                 columnsToRender.push(
                     <Square 

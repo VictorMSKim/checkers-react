@@ -15,7 +15,7 @@ class Square extends React.Component {
         const {x, y, piece, isKing} = this.props;
         let pieceColor;
         if(piece === '-' || piece === 'h') return <div></div>;
-        pieceColor = piece === 'r'? red : black; 
+        pieceColor = piece === 'r' || piece === 'rh' ? red : black; 
         return (<Pieces className={pieceColor} pieceX={x} pieceY={y} piece={piece} checkValidSquare={this.checkValidSquare} isKing={isKing}/>)
     }
 
