@@ -1,0 +1,21 @@
+.piece {
+    width: 40px;
+    height: 40px;
+    border: 1px solid black;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.red {
+    background-color: #f22;
+}
+
+.black {
+    background-color: black;
+}
+
+.king {
+    color: white;
+}

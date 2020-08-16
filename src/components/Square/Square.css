@@ -1,0 +1,20 @@
+.square {
+    width: 50px;
+    height: 50px;
+    border: 2px solid black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.light {
+    background-color: #fff;
+}
+
+.dark {
+    background-color: #bbb;
+}
+
+.highlight {
+    background-color: cadetblue;
+}
