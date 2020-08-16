@@ -8,7 +8,7 @@ It's a game of checkers
 
 Make sure you have npm installed.
 
-Enjoy! 
+Enjoy! :D
 
 ## To run
 
@@ -36,7 +36,6 @@ After it finishes, run:
 npm start
 ```
 
-Runs the app in the development mode.<br />
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
 ## To play
@@ -51,4 +50,8 @@ To move a piece, click on the desired piece, the possible paths will light up, t
 
 If an enemy can be jumped over, that will be the only move allowed for the chosen piece.
 
-If no moves are available anymore to a given player, the player loses the game, the winner will be announced on the text line right above the board when a piece is clicked.
+If no moves are available anymore to a given player, the player loses the game. 
+
+The winner will be announced on the text line right above the board when a piece is clicked.
+
+Have fun! :)
