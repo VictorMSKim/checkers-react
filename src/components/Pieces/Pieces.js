@@ -4,9 +4,6 @@ import './Pieces.css';
 class Pieces extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {
-            isKing: props.isKing
-        }
         this.handleClick = this.handleClick.bind(this);
     }
 

@@ -1,10 +1,10 @@
 import React from 'react';
-import './Board.css';
+import './GameBoard.css';
 import Square from '../Square/Square';
 import {initialBoardState, light, dark, highlight, columns, rows} from '../../utils/constants';
 import {removeDuplicates, removeEntry, isPresentInArray, checkIfInteger, calculateDelta} from '../../utils/utils';
 
-class Board extends React.Component {
+class GameBoard extends React.Component {
     constructor() {
         super();
         this.state = {
@@ -304,4 +304,4 @@ class Board extends React.Component {
     }
 }
 
-export default Board;
+export default GameBoard;
