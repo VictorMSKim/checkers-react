@@ -13,9 +13,9 @@ class Pieces extends React.Component {
     }
 
     render() {
-        const { isKing } = this.props
+        const { isKing, pieceX, pieceY } = this.props
         return (
-            <div className={`piece ${this.props.className}`} onClick={this.handleClick}>
+            <div className={`piece ${this.props.className}`} onClick={this.handleClick} data-testid="pieces" piecex={pieceX} piecey={pieceY}>
                 {isKing ? <div><p className="king">King</p></div> : null}
             </div>
         );

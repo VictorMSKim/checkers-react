@@ -25,29 +25,20 @@ class GameBoard extends React.Component {
         this.renderSquares = this.renderSquares.bind(this)
     }
 
-    updateBoardState(newPieceX, newPieceY) {
-        const { boardState, selectedRedPiece, selectedBlackPiece, enemy, isolatedRedPath, isolatedBlackPath, turn, kingPieces } = this.state
-        let newBoardState = boardState
-        this.cleanBoardHighlight(newBoardState);
-        this.movePiece(turn === 'r' ? selectedRedPiece : selectedBlackPiece, newPieceX, newPieceY, 
-                        newBoardState, enemy, turn === 'r' ? isolatedRedPath : isolatedBlackPath, kingPieces);
-        this.setState({boardState: newBoardState, selectedRedPiece: [], selectedBlackPiece: []})
-    }
-
-    switchTurn() {
-        const {turn} = this.state
+    switchTurn(turn) {
         this.setState({
-            turn: turn === 'b' ? 'r' : 'b'
+            turn: turn
         })
     }
 
     identifyEnemyPiece(pieceType, movesArray, board) {
         const enemy = [];
-        const enemyPiece = pieceType === 'r' ? 'b' : 'r';
+        const enemyPiece = pieceType === 'r'? 'b' : 'r';
         for(let i = 0; i < movesArray.length; i++) {
             if(board[movesArray[i][0]][movesArray[i][1]] === enemyPiece)
                 enemy.push(movesArray[i])
         }
+        this.setState({enemy: enemy})
         return enemy;
     }
 
@@ -65,7 +56,6 @@ class GameBoard extends React.Component {
                 }
             }
         }
-        this.setState({enemy: enemy})
         return jump
     }
 
@@ -91,12 +81,13 @@ class GameBoard extends React.Component {
         return isPresentInArray(kingPiecesArray, selectedPiece)
     }
 
-    updatePieceKingPosition(selectedPiece, newPosX, newPosY, kingPieces) {
+    updateKingPiecePosition(selectedPiece, newPosX, newPosY, kingPieces) {
         const tempKingPieces = removeEntry(kingPieces, selectedPiece);
         tempKingPieces.push([newPosX, newPosY])
         this.setState({
             kingPieces: tempKingPieces
         })
+        return tempKingPieces
     }
 
     removeKingEnemyPiece(enemyPos, kingPiecesCopy) {
@@ -109,11 +100,34 @@ class GameBoard extends React.Component {
         return kingPiecesCopy
     }
 
+    canJumpAgain(board, pieceType, selectedPiece, kingPiecesArray) {
+        const isKing = this.isPieceKing(selectedPiece, kingPiecesArray);
+        const paths = this.showPossiblePaths(board, isKing, pieceType, selectedPiece[0], selectedPiece[1])
+        const isolated = this.isolatePieceMoves(selectedPiece, pieceType === 'r' || pieceType === 'rh' ? paths[0] : paths[1], board, isKing, pieceType)
+        let onlyOneMove;
+        for(let i = 0; i < isolated.length; i++) {
+            onlyOneMove = this.onlyOneMove(selectedPiece[0], selectedPiece[1], isolated[i][0], isolated[i][1])
+        }
+        return onlyOneMove
+    }
+
+    onlyOneMove(oldPosX, oldPosY, newPosX, newPosY) {
+        const delta = calculateDelta(oldPosX, oldPosY, newPosX, newPosY)
+        if(delta[0] > 1 || delta[0] < -1 || delta[1] > 1 || delta[1] < -1) return false
+        return true
+    }
+
+    isMoveLegal(move, allowedMovesArray) {
+        return isPresentInArray(allowedMovesArray, move);
+    }
+
     movePiece(selectedPiece, newPieceX, newPieceY, board, enemy, isolatedMoves, kingPieces) {
         let kingPiecesCopy = kingPieces
         const newPos = [newPieceX, newPieceY]
+        this.cleanBoardHighlight(board)
         if(selectedPiece.length && this.isMoveLegal(newPos, isolatedMoves)) {
             const pieceType = board[selectedPiece[0]][selectedPiece[1]] === 'r' ? 'r' : 'b';
+            const turn = pieceType === 'r' ? 'b' : 'r';
             const enemyPos = this.enemyPosToRemove(selectedPiece[0], selectedPiece[1], newPieceX, newPieceY, isolatedMoves)
             if(enemy.length && checkIfInteger(enemyPos[0]) && checkIfInteger(enemyPos[1])) {
                 board[enemyPos[0]][enemyPos[1]] = '-'
@@ -121,14 +135,12 @@ class GameBoard extends React.Component {
             }
             board[newPieceX][newPieceY] = pieceType;
             board[selectedPiece[0]][selectedPiece[1]] = '-'
-            if(this.isPieceKing(selectedPiece, kingPiecesCopy)) this.updatePieceKingPosition(selectedPiece, newPieceX, newPieceY, kingPiecesCopy)
+            if(this.isPieceKing(selectedPiece, kingPiecesCopy)) kingPiecesCopy = this.updateKingPiecePosition(selectedPiece, newPieceX, newPieceY, kingPiecesCopy)
             this.turnPieceIntoKing(pieceType, newPos, kingPiecesCopy);
-            this.switchTurn();
+            const movedOnlyOnce = this.onlyOneMove(selectedPiece[0], selectedPiece[1], newPieceX, newPieceY)
+            const canJumpAgain = this.canJumpAgain(board, pieceType, newPos, kingPiecesCopy)
+            if(movedOnlyOnce || canJumpAgain) this.switchTurn(turn)
         }
-    }
-
-    isMoveLegal(move, allowedMovesArray) {
-        return isPresentInArray(allowedMovesArray, move);
     }
 
     includeInArray(path, pieceX, pieceY, movesArray) {
@@ -138,14 +150,12 @@ class GameBoard extends React.Component {
             movesArray.push([pieceX, pieceY - 1])        
     }
 
-    isolatePieceMoves(selectedPiece, piecePaths, board, isKing) {
+    isolatePieceMoves(selectedPiece, piecePaths, board, isKing, pieceType) {
         const moves = [];
         let jump = [];
-        let pieceType;
         let pieceX;
         let pieceXifKing;
         if (selectedPiece.length) {
-            pieceType = board[selectedPiece[0]][selectedPiece[1]] === 'r' ? 'r' : 'b';
             pieceX = pieceType === 'r' ? selectedPiece[0] + 1 : selectedPiece[0] - 1;
             this.includeInArray(piecePaths, pieceX, selectedPiece[1], moves);
             if(isKing) {
@@ -157,6 +167,34 @@ class GameBoard extends React.Component {
         }
         if(jump.length) return jump;
         return moves;
+    }
+
+    insertMoves(paths, isKing, pieceType, posX, posY) {
+        const front = pieceType === 'r' ? posX + 1 : posX - 1
+        const back = pieceType === 'r' ? posX - 1 : posX + 1
+        const left = posY - 1;
+        const right = posY + 1;
+        paths.push([front, right], [front, left])
+        if(isKing) paths.push([back, right], [back, left])
+    }
+
+    findAllMoves(board, possibleRedPaths, possibleBlackPaths, isKing) {
+        for (let i = 0; i < columns; i++) {
+            for (let j = 0; j < rows; j++) {
+                const pieceType = board[j][i]
+                if(pieceType === 'r') this.insertMoves(possibleRedPaths, isKing, pieceType, j, i)
+                if(pieceType === 'b') this.insertMoves(possibleBlackPaths, isKing, pieceType, j, i)
+            }
+        }
+    }
+
+    removeInvalidMovements(movementsArray) {
+        for (let i = 0; i < movementsArray.length; i++) {
+            if (this.isOutsideOfBoard(movementsArray[i])) {
+                movementsArray.splice(i, 1)
+                i--;
+            }
+        }
     }
 
     showPossiblePaths(board, isKing) {
@@ -171,38 +209,8 @@ class GameBoard extends React.Component {
         return [possibleRedPaths, possibleBlackPaths]
     }
 
-    insertMoves(paths, isKing, pieceType, posX, posY) {
-        const front = pieceType === 'r' ? posX + 1 : posX - 1
-        const back = pieceType === 'r' ? posX - 1 : posX + 1
-        const left = posY - 1;
-        const right = posY + 1;
-        paths.push([front, right], [front, left])
-        if(isKing) {
-            paths.push([back, right], [back, left])
-        }
-    }
-
-    findAllMoves(board, possibleRedPaths, possibleBlackPaths, isKing) {
-        for (let i = 0; i < columns; i++) {
-            for (let j = 0; j < rows; j++) {
-                const pieceType = board[j][i]
-                if(pieceType === 'r') this.insertMoves(possibleRedPaths, isKing, pieceType, j, i)
-                if(pieceType === 'b') this.insertMoves(possibleBlackPaths, isKing, pieceType, j, i)
-            }
-        }
-    }
-
     isOutsideOfBoard(positionsArray) {
         return positionsArray[0] > 7 || positionsArray[0] < 0 || positionsArray[1] < 0 || positionsArray[1] > 7
-    }
-
-    removeInvalidMovements(movementsArray) {
-        for (let i = 0; i < movementsArray.length; i++) {
-            if (this.isOutsideOfBoard(movementsArray[i])) {
-                movementsArray.splice(i, 1)
-                i--;
-            }
-        }
     }
 
     cleanBoardHighlight(highlightedBoard) {
@@ -228,7 +236,7 @@ class GameBoard extends React.Component {
     calculatePieceMoves(path, board, selectedPiece, pieceType, isKing) {
         const possiblePaths = this.showPossiblePaths(board, isKing);
         path = pieceType === 'r' ? possiblePaths[0] : possiblePaths[1];
-        path = this.isolatePieceMoves(selectedPiece, path, board, isKing)
+        path = this.isolatePieceMoves(selectedPiece, path, board, isKing, pieceType)
         this.highlightBoard(path, board, selectedPiece)
         this.setState({
             boardState: board, 
@@ -237,6 +245,7 @@ class GameBoard extends React.Component {
             isolatedRedPath: pieceType === 'r' ? path : [], 
             isolatedBlackPath: pieceType === 'r' ? [] : path
         })
+        return path
     }
 
     pieceClickHandler(pieceX, pieceY, pieceType, isKing) {
@@ -255,6 +264,15 @@ class GameBoard extends React.Component {
     endGame() {
         const {redPaths, blackPaths} = this.state
         return !redPaths.length || !blackPaths.length 
+    }
+
+    updateBoardState(newPieceX, newPieceY) {
+        const { boardState, selectedRedPiece, selectedBlackPiece, enemy, isolatedRedPath, isolatedBlackPath, turn, kingPieces } = this.state
+        let newBoardState = boardState
+        this.cleanBoardHighlight(newBoardState);
+        this.movePiece(turn === 'r' ? selectedRedPiece : selectedBlackPiece, newPieceX, newPieceY, 
+                        newBoardState, enemy, turn === 'r' ? isolatedRedPath : isolatedBlackPath, kingPieces);
+        this.setState({boardState: newBoardState, selectedRedPiece: [], selectedBlackPiece: []})
     }
 
     renderSquares() {
@@ -296,7 +314,7 @@ class GameBoard extends React.Component {
                             <p className={`turnText ${turn === 'r' ? 'redTurnText' : null}`}>TURN: {turn === 'r' ? 'RED PLAYER 2' : 'BLACK PLAYER 1'}</p>
                         </div>
                     }
-                    <div className="board">
+                    <div className="board" data-testid="board">
                         {
                             this.renderSquares().map((elem, index) => 
                                 <div key={index}>

@@ -14,7 +14,7 @@ class Square extends React.Component {
     renderPiece() {
         const {x, y, piece, isKing} = this.props;
         let pieceColor;
-        if(piece === '-' || piece === 'h') return <div></div>;
+        if(piece === '-' || piece === 'h') return null;
         pieceColor = piece === 'r' || piece === 'rh' ? red : black; 
         return (<Pieces className={pieceColor} pieceX={x} pieceY={y} piece={piece} checkValidSquare={this.checkValidSquare} isKing={isKing}/>)
     }
@@ -33,7 +33,7 @@ class Square extends React.Component {
 
     render() {
         return (
-            <div className={`square ${this.props.className}`} value={this.props.value} onClick={this.movePiece} >
+            <div className={`square ${this.props.className}`} onClick={this.movePiece} data-testid="squares">
                 {this.renderPiece(this.props.piece)}
             </div>
         );
