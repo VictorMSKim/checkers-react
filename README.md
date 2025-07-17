@@ -2,8 +2,6 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-It was built for a technical challenge for Qulture Rocks internship position
-
 It's a game of checkers
 
 Make sure you have npm installed.
